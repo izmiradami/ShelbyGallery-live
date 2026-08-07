@@ -36,6 +36,7 @@ export default function App() {
   const [channelBusy, setChannelBusy] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
   const [lastWithdrawTx, setLastWithdrawTx] = useState<string | null>(null);
+  const [location, setLocation] = useState<string | null>(null);
   const [funded, setFunded] = useState(false);
   const [funding, setFunding] = useState(false);
   const [blobs, setBlobs] = useState<UploadedBlob[]>([]);
@@ -155,7 +156,19 @@ export default function App() {
         setProgressLabel("clay erasure coding...");
         const fileData = new Uint8Array(await file.arrayBuffer());
 
-        setProgress(45);
+        setProgress(40);
+        setProgressLabel("resolving storage location...");
+
+        // Resolve a storage location on shelbynet
+        let loc = location;
+        if (!loc) {
+          const names = await shelbyClient.metadata.getLocationNames();
+          loc = names[0];
+          setLocation(loc);
+          addLog(`✓ storage location: ${loc} (of ${names.length} available)`);
+        }
+
+        setProgress(55);
         setProgressLabel("writing chunksets to shelby RPC...");
         addLog(`blobName: ${blobName}`);
 
@@ -165,6 +178,7 @@ export default function App() {
           signer: account,
           blobName,
           expirationMicros: Date.now() * 1000 + 6 * 86400_000_000, // 6 days
+          options: { selectedLocation: loc },
         });
 
         setProgress(90);
@@ -192,7 +206,7 @@ export default function App() {
         }, 1200);
       }
     },
-    [account, funded, addLog, showToast]
+    [account, funded, location, addLog, showToast]
   );
 
   // ── REAL DOWNLOAD (verify blob exists on network) ──
