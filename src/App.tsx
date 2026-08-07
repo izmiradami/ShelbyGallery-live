@@ -89,6 +89,12 @@ export default function App() {
         amount: 100_000_000,
       });
       addLog(`✓ ShelbyUSD faucet tx: ${tx2.slice(0, 20)}...`);
+      // Fund creator too — needed for withdraw gas
+      const tx3 = await shelbyClient.fundAccountWithAPT({
+        address: creator.accountAddress,
+        amount: 100_000_000,
+      });
+      addLog(`✓ Creator APT faucet tx: ${tx3.slice(0, 20)}...`);
       setFunded(true);
       showToast("✓ Account funded on shelbynet");
     } catch (err) {
@@ -98,7 +104,7 @@ export default function App() {
     } finally {
       setFunding(false);
     }
-  }, [account, addLog, showToast]);
+  }, [account, creator, addLog, showToast]);
 
   // ── REAL MICROPAYMENT CHANNEL ──
   const setupChannel = useCallback(async () => {
