@@ -5,8 +5,17 @@ import {
 import { Account, AccountAddress, Network } from "@aptos-labs/ts-sdk";
 import type { SenderBuiltMicropayment } from "@shelby-protocol/sdk/browser";
 
+const API_KEY = import.meta.env.VITE_APTOS_API_KEY as string | undefined;
+
 export const mpClient = new ShelbyMicropaymentChannelClient({
   network: Network.SHELBYNET,
+  ...(API_KEY
+    ? {
+        apiKey: API_KEY,
+        aptos: { clientConfig: { API_KEY } },
+        indexer: { apiKey: API_KEY },
+      }
+    : {}),
 });
 
 export const SHELBYUSD = AccountAddress.fromString(SHELBYUSD_FA_METADATA_ADDRESS);

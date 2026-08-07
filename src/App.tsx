@@ -8,7 +8,19 @@ import {
 import "./App.css";
 
 // ── Real Shelby client on shelbynet ──
-const shelbyClient = new ShelbyClient({ network: Network.SHELBYNET });
+const API_KEY = import.meta.env.VITE_APTOS_API_KEY as string | undefined;
+
+const shelbyClient = new ShelbyClient({
+  network: Network.SHELBYNET,
+  ...(API_KEY
+    ? {
+        apiKey: API_KEY,
+        aptos: { clientConfig: { API_KEY } },
+        rpc: { apiKey: API_KEY },
+        indexer: { apiKey: API_KEY },
+      }
+    : {}),
+});
 
 type UploadedBlob = {
   name: string;
