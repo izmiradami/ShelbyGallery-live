@@ -1,5 +1,7 @@
 # ShelbyGallery — Live Shelbynet Integration
 
+🟢 **[Live Demo → shelby-gallery-live.vercel.app](https://shelby-gallery-live.vercel.app)**
+
 > Decentralized media platform with **real** `@shelby-protocol/sdk` integration: blob storage, retrieval, AND a fully working micropayment channel lifecycle on shelbynet.
 
 ## Real SDK integration
