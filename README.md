@@ -41,7 +41,7 @@ npm run dev
 ## Stack
 
 - Vite + React + TypeScript
-- `@shelby-protocol/sdk` v0.6.0 (browser build)
+- `@shelby-protocol/sdk` v0.9.2 (browser build)
 - `@aptos-labs/ts-sdk`
 - Network: `shelbynet`
 
