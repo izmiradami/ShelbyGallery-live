@@ -74,26 +74,40 @@ export default function App() {
   }, []);
 
   // ── FUND ACCOUNT via SDK faucet ──
+  const fundWithRetry = useCallback(
+    async (kind: "APT" | "ShelbyUSD", address: typeof account.accountAddress) => {
+      const fn = kind === "APT"
+        ? shelbyClient.fundAccountWithAPT.bind(shelbyClient)
+        : shelbyClient.fundAccountWithShelbyUSD.bind(shelbyClient);
+      // Try 1 unit, then fall back to 0.1 if the faucet rejects the amount (VmError)
+      for (const amount of [100_000_000, 10_000_000]) {
+        try {
+          return await fn({ address, amount });
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          if (amount === 100_000_000 && /VmError|INSUFFICIENT|amount/i.test(msg)) {
+            addLog(`${kind} faucet: retrying with smaller amount...`);
+            continue;
+          }
+          throw err;
+        }
+      }
+      throw new Error("faucet retries exhausted");
+    },
+    [addLog]
+  );
+
   const fundAccount = useCallback(async () => {
     setFunding(true);
     const addr = account.accountAddress.toString();
     addLog(`Requesting faucet APT for ${addr.slice(0, 12)}...`);
     try {
-      const tx = await shelbyClient.fundAccountWithAPT({
-        address: account.accountAddress,
-        amount: 100_000_000, // 1 APT
-      });
+      const tx = await fundWithRetry("APT", account.accountAddress);
       addLog(`✓ APT faucet tx: ${tx.slice(0, 20)}...`);
-      const tx2 = await shelbyClient.fundAccountWithShelbyUSD({
-        address: account.accountAddress,
-        amount: 100_000_000,
-      });
+      const tx2 = await fundWithRetry("ShelbyUSD", account.accountAddress);
       addLog(`✓ ShelbyUSD faucet tx: ${tx2.slice(0, 20)}...`);
       // Fund creator too — needed for withdraw gas
-      const tx3 = await shelbyClient.fundAccountWithAPT({
-        address: creator.accountAddress,
-        amount: 100_000_000,
-      });
+      const tx3 = await fundWithRetry("APT", creator.accountAddress);
       addLog(`✓ Creator APT faucet tx: ${tx3.slice(0, 20)}...`);
       setFunded(true);
       showToast("✓ Account funded on shelbynet");
@@ -104,7 +118,7 @@ export default function App() {
     } finally {
       setFunding(false);
     }
-  }, [account, creator, addLog, showToast]);
+  }, [account, creator, fundWithRetry, addLog, showToast]);
 
   // ── REAL MICROPAYMENT CHANNEL ──
   const setupChannel = useCallback(async () => {
@@ -190,12 +204,11 @@ export default function App() {
         setProgressLabel("writing chunksets to shelby RPC...");
         addLog(`blobName: ${blobName}`);
 
-        // ══ REAL SDK CALL ══
+        // ══ REAL SDK CALL ══ (SDK 0.9.x: expiration artık protokol tarafında)
         await shelbyClient.upload({
           blobData: fileData,
           signer: account,
           blobName,
-          expirationMicros: Date.now() * 1000 + 6 * 86400_000_000, // 6 days
           options: { selectedLocation: loc },
         });
 
